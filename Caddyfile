@@ -1,0 +1,39 @@
+{DOMAIN} {
+    # Automatic HTTPS via Let's Encrypt
+    encode gzip zstd
+
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+
+    # API routes → FastAPI backend
+    handle /api/* {
+        reverse_proxy backend:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            lb_policy round_robin
+            health_uri /api/v1/health
+            health_interval 30s
+        }
+    }
+
+    # Everything else 404 (frontend is on Vercel)
+    handle {
+        respond "Not found — frontend is at https://app.{$DOMAIN}" 404
+    }
+
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 100mb
+            roll_keep 5
+        }
+        format json
+    }
+}

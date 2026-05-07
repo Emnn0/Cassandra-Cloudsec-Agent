@@ -1,0 +1,320 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LogLens Threat Report</title>
+  <link rel="stylesheet" href="threat_report.css" />
+</head>
+<body>
+
+<!-- ╔══════════════════════════════════════════╗ -->
+<!-- ║              COVER PAGE                 ║ -->
+<!-- ╚══════════════════════════════════════════╝ -->
+<div class="cover-page">
+  <div class="watermark">CONFIDENTIAL</div>
+
+  <div class="cover-header">
+    <div class="logo-mark">CL</div>
+    <span class="logo-text">Cassandra Log</span>
+  </div>
+
+  <div class="cover-body">
+    <p class="cover-label">Security Intelligence Report</p>
+    <h1 class="cover-title">Threat Analysis<br/>Report</h1>
+
+    <div class="threat-badge threat-{{ threat.threat_level }}">
+      {{ threat.threat_level | upper }}
+    </div>
+
+    <div class="cover-meta">
+      <div class="meta-row">
+        <span class="meta-label">Observation window</span>
+        <span class="meta-value">{{ time_range_start }} — {{ time_range_end }}</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Total events analysed</span>
+        <span class="meta-value">{{ "{:,}".format(heuristic.total_events) }}</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Confidence score</span>
+        <span class="meta-value">{{ confidence_pct }}%</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Generated</span>
+        <span class="meta-value">{{ generated_at }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-footer">
+    <span>Cassandra CloudSec Agent — Otomatik Güvenlik İstihbarat Platformu</span>
+    <span>Muhammed Emin Berberoğlu</span>
+  </div>
+</div>
+
+
+<!-- ╔══════════════════════════════════════════╗ -->
+<!-- ║         SECTION 1 — EXECUTIVE SUMMARY   ║ -->
+<!-- ╚══════════════════════════════════════════╝ -->
+<div class="page section-page">
+  <div class="watermark">CONFIDENTIAL</div>
+  <div class="section-header">
+    <span class="section-number">01</span>
+    <h2 class="section-title">Executive Summary</h2>
+  </div>
+  <div class="executive-summary-box">
+    <p class="executive-text">{{ threat.executive_summary }}</p>
+  </div>
+
+  {% if threat.false_positive_warnings %}
+  <div class="callout callout-warning">
+    <div class="callout-icon">⚠</div>
+    <div>
+      <p class="callout-title">False Positive Considerations</p>
+      <ul class="callout-list">
+        {% for warning in threat.false_positive_warnings %}
+        <li>{{ warning }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+
+<!-- ╔══════════════════════════════════════════╗ -->
+<!-- ║      SECTION 2 — THREAT LEVEL           ║ -->
+<!-- ╚══════════════════════════════════════════╝ -->
+<div class="page section-page">
+  <div class="watermark">CONFIDENTIAL</div>
+  <div class="section-header">
+    <span class="section-number">02</span>
+    <h2 class="section-title">Threat Assessment</h2>
+  </div>
+
+  <div class="assessment-grid">
+    <div class="assessment-card">
+      <p class="assessment-label">Overall Threat Level</p>
+      <div class="threat-badge-lg threat-{{ threat.threat_level }}">
+        {{ threat.threat_level | upper }}
+      </div>
+    </div>
+    <div class="assessment-card">
+      <p class="assessment-label">Analyst Confidence</p>
+      <div class="confidence-ring-wrap">
+        <div class="confidence-number">{{ confidence_pct }}<span class="pct-sign">%</span></div>
+        <div class="confidence-bar-track">
+          <div class="confidence-bar-fill" style="width: {{ confidence_pct }}%;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="assessment-card">
+      <p class="assessment-label">Threats Identified</p>
+      <div class="big-number">{{ threat.identified_threats | length }}</div>
+    </div>
+    <div class="assessment-card">
+      <p class="assessment-label">Anomalies Detected</p>
+      <div class="big-number">{{ heuristic.anomalies | length }}</div>
+    </div>
+  </div>
+
+  {% if threat.investigation_priority %}
+  <div class="section-sub-header">Investigation Priority</div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th style="width:40px">#</th>
+        <th>Entity</th>
+        <th>Reason</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in threat.investigation_priority %}
+      <tr>
+        <td class="center mono">{{ loop.index }}</td>
+        <td class="mono">{{ item.entity }}</td>
+        <td>{{ item.reason }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+
+
+<!-- ╔══════════════════════════════════════════╗ -->
+<!-- ║    SECTION 3 — IDENTIFIED THREATS       ║ -->
+<!-- ╚══════════════════════════════════════════╝ -->
+<div class="page section-page">
+  <div class="watermark">CONFIDENTIAL</div>
+  <div class="section-header">
+    <span class="section-number">03</span>
+    <h2 class="section-title">Identified Threats</h2>
+  </div>
+
+  {% for t in threat.identified_threats %}
+  <div class="threat-card">
+    <div class="threat-card-header">
+      <div>
+        <span class="owasp-tag">{{ t.threat_type }}</span>
+        <p class="threat-card-desc">{{ t.description }}</p>
+      </div>
+    </div>
+
+    <div class="threat-card-body">
+      <div class="threat-field">
+        <span class="field-label">Evidence</span>
+        <p class="field-value">{{ t.evidence }}</p>
+      </div>
+      <div class="threat-field">
+        <span class="field-label">Affected Assets</span>
+        <div class="asset-tags">
+          {% for asset in t.affected_assets %}
+          <span class="asset-tag">{{ asset }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="threat-field">
+        <span class="field-label">Recommended Action</span>
+        <p class="field-value field-action">{{ t.recommended_action }}</p>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+
+<!-- ╔══════════════════════════════════════════╗ -->
+<!-- ║    SECTION 4 — WAF RECOMMENDATIONS      ║ -->
+<!-- ╚══════════════════════════════════════════╝ -->
+{% if threat.suggested_waf_rules %}
+<div class="page section-page">
+  <div class="watermark">CONFIDENTIAL</div>
+  <div class="section-header">
+    <span class="section-number">04</span>
+    <h2 class="section-title">Recommended WAF Rules</h2>
+  </div>
+  <p class="section-intro">The following Cloudflare WAF expression rules are suggested based on observed patterns. Review before deployment.</p>
+
+  {% for rule in threat.suggested_waf_rules %}
+  <div class="code-block">
+    <span class="code-index">{{ loop.index }}</span>
+    <code>{{ rule }}</code>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+
+<!-- ╔══════════════════════════════════════════╗ -->
+<!-- ║    SECTION 5 — STATISTICAL APPENDIX     ║ -->
+<!-- ╚══════════════════════════════════════════╝ -->
+<div class="page section-page stats-page">
+  <div class="watermark">CONFIDENTIAL</div>
+  <div class="section-header">
+    <span class="section-number">05</span>
+    <h2 class="section-title">İstatistiksel Ek</h2>
+  </div>
+
+  <div class="stats-grid">
+
+    <!-- Top Source IPs -->
+    <div class="stats-block">
+      <h3 class="stats-block-title">Top Source IPs</h3>
+      <table class="data-table">
+        <thead><tr><th>IP Address</th><th class="right">Requests</th><th class="right">Share</th></tr></thead>
+        <tbody>
+          {% for ip in heuristic.top_source_ips %}
+          <tr>
+            <td class="mono">{{ ip.ip }}</td>
+            <td class="right mono">{{ "{:,}".format(ip.count) }}</td>
+            <td class="right">
+              <div class="bar-wrap">
+                <div class="bar-fill" style="width: {{ [ip.percentage, 100] | min }}%;"></div>
+                <span class="bar-label">{{ ip.percentage }}%</span>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Action Distribution -->
+    <div class="stats-block">
+      <h3 class="stats-block-title">Action Distribution</h3>
+      {% set total = heuristic.total_events %}
+      {% for action, count in heuristic.action_distribution.items() %}
+      <div class="action-row">
+        <span class="action-label action-{{ action }}">{{ action | upper }}</span>
+        <div class="bar-wrap flex-1">
+          <div class="bar-fill bar-{{ action }}" style="width: {{ [(count / total * 100), 100] | min }}%;"></div>
+        </div>
+        <span class="action-count">{{ "{:,}".format(count) }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Top Rules Triggered -->
+    {% if heuristic.top_rules_triggered %}
+    <div class="stats-block">
+      <h3 class="stats-block-title">Top Rules Triggered</h3>
+      <table class="data-table">
+        <thead><tr><th>Rule ID</th><th>Message</th><th class="right">Hits</th></tr></thead>
+        <tbody>
+          {% for rule in heuristic.top_rules_triggered %}
+          <tr>
+            <td class="mono small">{{ rule.rule_id }}</td>
+            <td class="small">{{ rule.rule_message or "—" }}</td>
+            <td class="right mono">{{ "{:,}".format(rule.count) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <!-- Top URIs -->
+    <div class="stats-block">
+      <h3 class="stats-block-title">Top URIs</h3>
+      <table class="data-table">
+        <thead><tr><th>URI</th><th class="right">Requests</th></tr></thead>
+        <tbody>
+          {% for uri in heuristic.top_uris %}
+          <tr>
+            <td class="mono small">{{ uri.value }}</td>
+            <td class="right mono">{{ "{:,}".format(uri.count) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Detected Anomalies -->
+    {% if heuristic.anomalies %}
+    <div class="stats-block stats-block-full">
+      <h3 class="stats-block-title">Detected Anomalies</h3>
+      <table class="data-table">
+        <thead><tr><th style="width:60px">Severity</th><th style="width:160px">Type</th><th>Description</th></tr></thead>
+        <tbody>
+          {% for anomaly in heuristic.anomalies %}
+          <tr>
+            <td class="center">
+              <span class="severity-badge sev-{{ anomaly.severity }}">{{ anomaly.severity }}/10</span>
+            </td>
+            <td class="mono small">{{ anomaly.type }}</td>
+            <td class="small">{{ anomaly.description }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+</body>
+</html>
+

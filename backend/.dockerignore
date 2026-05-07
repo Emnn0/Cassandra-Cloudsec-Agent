@@ -1,0 +1,37 @@
+# Geliştirme ortamı
+.env
+.env.*
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Test & geliştirme araçları
+.pytest_cache
+.mypy_cache
+.ruff_cache
+htmlcov/
+.coverage
+*.egg-info/
+dist/
+build/
+
+# Versiyon kontrolü
+.git
+.gitignore
+.cursor
+README.md
+*.md
+NOTES.md
+
+# OS dosyaları
+.DS_Store
+Thumbs.db
+
+# Log dosyaları
+*.log
+
+# Geçici dosyalar
+tmp/
+temp/

@@ -1,0 +1,186 @@
+# ── Cassandra CloudSec Agent — Development Stack ─────────────────────────────
+# Kullanım: docker compose --env-file .env.dev up --build
+
+x-backend-env: &backend-env
+  DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://loglens:loglens_dev@postgres:5432/loglens}
+  REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+  CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/1}
+  CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/2}
+  DEBUG: ${DEBUG:-true}
+  ENVIRONMENT: ${ENVIRONMENT:-development}
+  CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000"]}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-}
+  LLM_MODEL: ${LLM_MODEL:-claude-sonnet-4-5}
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+  AWS_REGION: ${AWS_REGION:-eu-west-1}
+  S3_BUCKET_NAME: ${S3_BUCKET_NAME:-loglens-dev-uploads}
+  CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
+  SENTRY_DSN: ${SENTRY_DSN:-}
+
+services:
+
+  # ── Veritabanı ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: loglens_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-loglens}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-loglens_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-loglens}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-loglens}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - loglens
+
+  # ── Redis (broker + cache) ──────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: loglens_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - loglens
+
+  # ── DB Migration (bir kez çalışır, ardından durur) ─────────────────────────
+  db_migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: loglens_migrate
+    command: ["sh", "-c", "alembic upgrade head && echo '✓ Migration tamamlandı'"]
+    environment:
+      <<: *backend-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - loglens
+
+  # ── FastAPI Backend ─────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: loglens_backend
+    restart: unless-stopped
+    command: [
+      "uvicorn", "app.main:app",
+      "--host", "0.0.0.0",
+      "--port", "8000",
+      "--reload",
+      "--reload-dir", "/app/app"
+    ]
+    environment:
+      <<: *backend-env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/app:/app/app:ro
+      - loglens_uploads:/tmp/loglens_uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      db_migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/v1/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
+    networks:
+      - loglens
+
+  # ── Celery Worker ───────────────────────────────────────────────────────────
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.celery
+    container_name: loglens_celery
+    restart: unless-stopped
+    environment:
+      <<: *backend-env
+    volumes:
+      - ./backend/app:/app/app:ro
+      - loglens_uploads:/tmp/loglens_uploads
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      db_migrate:
+        condition: service_completed_successfully
+    networks:
+      - loglens
+
+  # ── Next.js Frontend ────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
+    container_name: loglens_frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
+      INTERNAL_API_URL: http://backend:8000
+      NEXT_PUBLIC_CLERK_SIGN_IN_URL: /sign-in
+      NEXT_PUBLIC_CLERK_SIGN_UP_URL: /sign-up
+      NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: /dashboard
+      NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: /dashboard
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - loglens
+
+  # ── Adminer (DB yönetim arayüzü) ────────────────────────────────────────────
+  adminer:
+    image: adminer:4
+    container_name: loglens_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - loglens
+
+volumes:
+  postgres_data:
+  redis_data:
+  loglens_uploads:
+
+networks:
+  loglens:
+    driver: bridge

@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+
+# Environment — hiçbir .env dosyası GitHub'a gitmesin
+.env
+.env.dev
+.env.local
+.env.*.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Geçici test dosyaları
+test_*.py
+test_*.sh
+check_analysis.py
+full_progress_test.py
+run_progress_test.sh
+test_report.pdf

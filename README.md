@@ -1,0 +1,169 @@
+# Cassandra CloudSec Agent
+
+Yapay zeka destekli güvenlik log analiz platformu. WAF ve sunucu loglarını yükle, otomatik tehdit analizi al, PDF raporu indir.
+
+## Özellikler
+
+- **Çoklu log formatı desteği** — Cloudflare WAF, Cloudflare HTTP, LiteSpeed, Apache, Nginx ve genel metin logları
+- **Otomatik heuristik analiz** — IP dominansı, anormal trafik, eylem dağılımı
+- **Yapay zeka tehdit raporu** — Claude ile OWASP kategorize edilmiş tehdit tespiti (Türkçe)
+- **PDF raporu** — Profesyonel tehdit raporu indirme
+- **Gerçek zamanlı ilerleme** — Analiz adımları canlı takip
+- **Karanlık tema** — Siber güvenlik odaklı UI
+
+## Teknoloji Yığını
+
+| Katman | Teknoloji |
+|--------|-----------|
+| Backend | Python 3.11, FastAPI, Celery, SQLAlchemy 2.0 |
+| Frontend | Next.js 14, TypeScript, Tailwind CSS |
+| Veritabanı | PostgreSQL 16 |
+| Kuyruk | Redis 7 |
+| LLM | Anthropic Claude (claude-sonnet-4-5) |
+| PDF | WeasyPrint |
+| Altyapı | Docker Compose |
+
+## Kurulum
+
+### Gereksinimler
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/macOS/Linux)
+- Anthropic API anahtarı → [console.anthropic.com](https://console.anthropic.com)
+
+### Adım 1: Depoyu klonla
+
+```bash
+git clone https://github.com/kullanici-adi/cassandra-cloudsec-agent.git
+cd cassandra-cloudsec-agent
+```
+
+### Adım 2: Ortam değişkenlerini ayarla
+
+```bash
+cp .env.example .env.dev
+```
+
+`.env.dev` dosyasını aç ve en az şu alanı doldur:
+
+```env
+ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxxxxxx
+```
+
+> **Not:** Clerk ve AWS S3 olmadan da çalışır. Clerk boş bırakılırsa kimlik doğrulama devre dışı kalır. S3 boş bırakılırsa dosyalar lokal olarak `/tmp` altında saklanır.
+
+### Adım 3: Docker ile başlat
+
+```bash
+docker compose --env-file .env.dev up --build
+```
+
+İlk seferinde image'lar indirildiği için 3-5 dakika sürebilir.
+
+### Adım 4: Tarayıcıda aç
+
+| Servis | URL |
+|--------|-----|
+| Uygulama | http://localhost:3000 |
+| API Docs | http://localhost:8000/docs |
+| DB Yönetimi | http://localhost:8080 |
+
+---
+
+## Kullanım
+
+1. **http://localhost:3000** adresine git
+2. **"Log Dosyası Yükle"** butonuna tıkla
+3. Desteklenen bir log dosyası seç (`.ndjson`, `.log`, `.txt`)
+4. Analiz otomatik başlar — adımları canlı izleyebilirsin
+5. Tamamlanınca **tehdit raporu** ve **PDF** indir
+
+### Desteklenen Log Formatları
+
+| Format | Örnek Dosya |
+|--------|-------------|
+| Cloudflare WAF | `firewall_events.ndjson` |
+| Cloudflare HTTP | `http_logs.ndjson` |
+| LiteSpeed / Apache | `access.log`, `error.log` |
+| Genel metin | `server.log`, `app.log` |
+
+---
+
+## Geliştirme
+
+### Servisleri ayrı başlatma
+
+```bash
+# Sadece altyapı (DB + Redis)
+docker compose --env-file .env.dev up postgres redis -d
+
+# Backend geliştirme (hot-reload)
+cd backend
+pip install -e ".[dev]"
+uvicorn app.main:app --reload
+
+# Frontend geliştirme (hot-reload)
+cd frontend
+npm install
+npm run dev
+```
+
+### Veritabanı migration
+
+```bash
+docker exec loglens_backend alembic upgrade head
+```
+
+### Logları izle
+
+```bash
+# Tüm servisler
+docker compose --env-file .env.dev logs -f
+
+# Sadece Celery (analiz işçisi)
+docker logs loglens_celery -f
+
+# Sadece backend
+docker logs loglens_backend -f
+```
+
+---
+
+## Proje Yapısı
+
+```
+cassandra-cloudsec-agent/
+├── backend/                    # FastAPI + Celery uygulaması
+│   ├── app/
+│   │   ├── api/v1/             # REST endpoint'leri
+│   │   ├── services/
+│   │   │   ├── parsers/        # Log format parser'ları
+│   │   │   ├── llm/            # LLM provider katmanı
+│   │   │   ├── heuristics.py   # İstatistiksel analiz
+│   │   │   └── reasoning.py    # LLM tehdit analizi
+│   │   ├── tasks/analyze.py    # Celery analiz görevi
+│   │   └── templates/          # Jinja2 + PDF şablonları
+│   └── alembic/                # DB migration'ları
+├── frontend/                   # Next.js 14 uygulaması
+│   └── src/app/
+│       ├── dashboard/          # Ana panel
+│       └── analyses/[id]/      # Analiz detay sayfası
+├── docker-compose.yml
+├── .env.example                # Ortam değişkenleri şablonu
+└── README.md
+```
+
+---
+
+## Katkı
+
+1. Fork et
+2. Feature branch oluştur: `git checkout -b feature/yeni-ozellik`
+3. Commit at: `git commit -m "feat: yeni özellik açıklaması"`
+4. Push et: `git push origin feature/yeni-ozellik`
+5. Pull request aç
+
+---
+
+## Lisans
+
+MIT License — Muhammed Emin Berberoğlu

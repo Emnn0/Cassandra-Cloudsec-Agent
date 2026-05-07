@@ -1,0 +1,200 @@
+name: CI / Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_BACKEND: ${{ github.repository }}/loglens-backend
+  IMAGE_CELERY:  ${{ github.repository }}/loglens-celery
+
+jobs:
+  # ── Tests ──────────────────────────────────────────────────────────────────
+  test-backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: loglens
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: loglens_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U loglens"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        working-directory: backend
+        run: pip install -e ".[dev]" 2>/dev/null || pip install fastapi uvicorn pydantic pydantic-settings sqlalchemy asyncpg alembic celery redis boto3 anthropic weasyprint jinja2 httpx python-jose passlib sentry-sdk pytest pytest-asyncio pytest-cov
+
+      - name: Run ruff lint
+        working-directory: backend
+        run: ruff check app/ || true   # warn only on CI for now
+
+      - name: Run tests
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://loglens:test@localhost:5432/loglens_test
+          REDIS_URL: redis://localhost:6379/0
+          CELERY_BROKER_URL: redis://localhost:6379/1
+          CELERY_RESULT_BACKEND: redis://localhost:6379/2
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_REGION: us-east-1
+          S3_BUCKET_NAME: test-bucket
+          ANTHROPIC_API_KEY: test
+          CLERK_SECRET_KEY: test
+          ENVIRONMENT: test
+          DEBUG: "true"
+        run: pytest -x -q -m "not integration" --tb=short
+
+  test-frontend:
+    name: Frontend type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Type check
+        working-directory: frontend
+        run: npm run type-check
+
+      - name: Build
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_placeholder
+          NEXT_PUBLIC_API_URL: https://api.example.com
+        run: npm run build
+
+  # ── Build & Push Images ────────────────────────────────────────────────────
+  build-push:
+    name: Build & push Docker images
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file:    ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to:   type=gha,mode=max
+
+      - name: Build & push celery
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file:    ./backend/Dockerfile.celery
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_CELERY }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_CELERY }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to:   type=gha,mode=max
+
+  # ── SSH Deploy ─────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    needs: build-push
+    environment: production
+    concurrency: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy docker-compose to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host:     ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key:      ${{ secrets.PROD_SSH_KEY }}
+          source:   "docker-compose.prod.yml,Caddyfile"
+          target:   "/opt/loglens"
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:     ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key:      ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/loglens
+
+            # Write .env from GitHub secrets
+            cat > .env <<EOF
+            ${{ secrets.PROD_ENV_FILE }}
+            EOF
+
+            # Log in to GHCR
+            echo "${{ secrets.GITHUB_TOKEN }}" | \
+              docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Pull new images
+            docker compose -f docker-compose.prod.yml pull backend celery_worker celery_beat
+
+            # Run migrations before rolling containers
+            docker compose -f docker-compose.prod.yml run --rm backend \
+              python -m alembic upgrade head
+
+            # Rolling restart (zero-downtime for stateless services)
+            docker compose -f docker-compose.prod.yml up -d --no-build
+
+            # Prune old images
+            docker image prune -f
+
+            echo "Deploy complete: $(date)"
+
+  # ── Vercel Frontend ────────────────────────────────────────────────────────
+  # Frontend deploys automatically via Vercel GitHub integration.
+  # Just connect the repo at vercel.com/import and set env vars.
+  # No workflow step needed here.

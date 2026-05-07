@@ -1,0 +1,648 @@
+/* ======================================================
+   LogLens Threat Report — Print Stylesheet
+   Design: Apple-style, navy + crimson, executive briefing
+   ====================================================== */
+
+/* ─── VARIABLES ─── */
+:root {
+  --navy:        #0f172a;
+  --navy-mid:    #1e293b;
+  --navy-light:  #334155;
+  --slate:       #64748b;
+  --slate-light: #94a3b8;
+  --border:      #e2e8f0;
+  --bg:          #f8fafc;
+  --white:       #ffffff;
+
+  --crimson:     #be123c;
+  --crimson-mid: #e11d48;
+  --crimson-bg:  #fff1f2;
+
+  --green:       #166534;
+  --green-bg:    #f0fdf4;
+  --amber:       #92400e;
+  --amber-bg:    #fffbeb;
+  --orange:      #9a3412;
+  --orange-bg:   #fff7ed;
+
+  --font: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --mono: "SF Mono", "Cascadia Code", "Fira Code", "Consolas", monospace;
+}
+
+/* ─── RESET & PAGE ─── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+@page :left  { margin-left: 0; }
+@page :right { margin-right: 0; }
+
+body {
+  font-family: var(--font);
+  font-size: 9.5pt;
+  line-height: 1.55;
+  color: var(--navy);
+  background: var(--white);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ─── PAGE CONTAINERS ─── */
+.cover-page,
+.page {
+  width: 210mm;
+  min-height: 297mm;
+  position: relative;
+  page-break-after: always;
+  overflow: hidden;
+}
+
+.page { padding: 16mm 18mm 24mm; }
+
+/* İstatistik eki: yükseklik kısıtlaması yok, çok sayfaya yayılabilir */
+.stats-page {
+  min-height: unset;
+  height: auto;
+  overflow: visible;
+  page-break-after: auto;
+  padding-bottom: 20mm;
+}
+
+/* ─── WATERMARK ─── */
+.watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  font-size: 80pt;
+  font-weight: 800;
+  color: rgba(15, 23, 42, 0.03);
+  letter-spacing: 0.18em;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 0;
+}
+
+/* ─── COVER PAGE ─── */
+.cover-page {
+  background: var(--navy);
+  display: flex;
+  flex-direction: column;
+  color: var(--white);
+  padding: 14mm 18mm;
+  height: 297mm;        /* sabit A4 yüksekliği — footer her zaman sayfada kalır */
+  overflow: hidden;
+}
+
+.cover-page .watermark {
+  color: rgba(255,255,255,0.04);
+  font-size: 90pt;
+}
+
+.cover-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: auto;
+}
+
+.logo-mark {
+  width: 38px;
+  height: 38px;
+  background: var(--crimson-mid);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14pt;
+  font-weight: 800;
+  color: white;
+  letter-spacing: -1px;
+}
+
+.logo-text {
+  font-size: 15pt;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: white;
+}
+
+.cover-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 14mm 0 22mm; /* alt padding: absolute footer için alan */
+  min-height: 0;        /* flex çocuklarının taşmasını önler */
+  overflow: hidden;
+}
+
+.cover-label {
+  font-size: 8.5pt;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--slate-light);
+  margin-bottom: 12px;
+}
+
+.cover-title {
+  font-size: 30pt;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -1.5px;
+  color: var(--white);
+  margin-bottom: 18px;
+}
+
+/* ─── THREAT BADGE ─── */
+.threat-badge, .threat-badge-lg {
+  display: inline-block;
+  padding: 5px 16px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 10pt;
+  letter-spacing: 0.12em;
+  margin-bottom: 18px;
+}
+
+.threat-badge-lg {
+  font-size: 16pt;
+  padding: 10px 28px;
+  border-radius: 8px;
+}
+
+.threat-low      { background: #166534; color: #f0fdf4; }
+.threat-medium   { background: #92400e; color: #fffbeb; }
+.threat-high     { background: #9a3412; color: #fff7ed; }
+.threat-critical { background: var(--crimson); color: #fff1f2; }
+
+/* ─── COVER META ─── */
+.cover-meta {
+  border-top: 1px solid rgba(255,255,255,0.12);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.meta-label {
+  font-size: 8pt;
+  color: var(--slate-light);
+  letter-spacing: 0.06em;
+}
+
+.meta-value {
+  font-size: 9pt;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+}
+
+.cover-footer {
+  position: absolute;
+  bottom: 14mm;
+  left: 18mm;
+  right: 18mm;
+  display: flex;
+  justify-content: space-between;
+  font-size: 7.5pt;
+  color: rgba(255,255,255,0.35);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 12px;
+}
+
+/* ─── SECTION HEADER ─── */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--border);
+}
+
+.section-number {
+  font-size: 9pt;
+  font-weight: 800;
+  color: var(--crimson-mid);
+  letter-spacing: 0.06em;
+}
+
+.section-title {
+  font-size: 17pt;
+  font-weight: 700;
+  color: var(--navy);
+  letter-spacing: -0.5px;
+}
+
+.section-intro {
+  color: var(--slate);
+  margin-bottom: 18px;
+  font-size: 9pt;
+}
+
+.section-sub-header {
+  font-size: 10pt;
+  font-weight: 700;
+  color: var(--navy-mid);
+  margin: 22px 0 10px;
+  letter-spacing: -0.2px;
+}
+
+/* ─── EXECUTIVE SUMMARY ─── */
+.executive-summary-box {
+  background: var(--bg);
+  border-left: 4px solid var(--crimson-mid);
+  border-radius: 0 8px 8px 0;
+  padding: 16px 20px;
+  margin-bottom: 22px;
+}
+
+.executive-text {
+  font-size: 11pt;
+  line-height: 1.65;
+  color: var(--navy-mid);
+}
+
+/* ─── CALLOUT ─── */
+.callout {
+  display: flex;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.callout-warning { background: var(--amber-bg); border: 1px solid #fde68a; }
+
+.callout-icon { font-size: 14pt; line-height: 1; margin-top: 1px; }
+
+.callout-title {
+  font-size: 9pt;
+  font-weight: 700;
+  color: var(--amber);
+  margin-bottom: 6px;
+}
+
+.callout-list {
+  margin-left: 16px;
+  color: var(--navy-mid);
+}
+
+.callout-list li { margin-bottom: 4px; font-size: 8.5pt; }
+
+/* ─── ASSESSMENT GRID ─── */
+.assessment-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.assessment-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+
+.assessment-label {
+  font-size: 7.5pt;
+  font-weight: 600;
+  color: var(--slate);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.big-number {
+  font-size: 30pt;
+  font-weight: 800;
+  color: var(--navy);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.confidence-number {
+  font-size: 28pt;
+  font-weight: 800;
+  color: var(--navy);
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+}
+
+.pct-sign { font-size: 14pt; }
+
+.confidence-bar-track {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.confidence-bar-fill {
+  height: 100%;
+  background: var(--crimson-mid);
+  border-radius: 3px;
+}
+
+/* ─── TABLES ─── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5pt;
+}
+
+.data-table thead tr {
+  background: var(--navy);
+  color: white;
+}
+
+.data-table th {
+  padding: 7px 10px;
+  font-weight: 600;
+  font-size: 7.5pt;
+  letter-spacing: 0.05em;
+  text-align: left;
+}
+
+.data-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--navy-mid);
+}
+
+.data-table tbody tr:nth-child(even) { background: var(--bg); }
+.data-table tbody tr:last-child td { border-bottom: none; }
+
+.right  { text-align: right !important; }
+.center { text-align: center !important; }
+.mono   { font-family: var(--mono); font-size: 8pt; }
+.small  { font-size: 8pt; }
+
+/* ─── BAR CHART ─── */
+.bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 80px;
+}
+
+.bar-fill {
+  height: 6px;
+  background: var(--crimson-mid);
+  border-radius: 3px;
+  min-width: 2px;
+}
+
+.bar-label {
+  font-size: 7.5pt;
+  color: var(--slate);
+  white-space: nowrap;
+}
+
+/* ─── ACTION ROWS ─── */
+.action-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.action-label {
+  font-size: 7.5pt;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  min-width: 60px;
+  text-align: center;
+}
+
+.action-block   { background: var(--crimson); color: white; }
+.action-allow   { background: var(--green); color: white; }
+.action-log     { background: var(--navy-light); color: white; }
+.action-challenge { background: var(--amber); color: white; }
+
+.bar-block   { background: var(--crimson); }
+.bar-allow   { background: #22c55e; }
+.bar-log     { background: var(--slate); }
+.bar-challenge { background: #f59e0b; }
+
+.action-count {
+  font-size: 8pt;
+  font-weight: 600;
+  color: var(--navy);
+  min-width: 48px;
+  text-align: right;
+}
+
+.flex-1 { flex: 1; }
+
+/* ─── SEVERITY BADGE ─── */
+.severity-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 7.5pt;
+  font-weight: 700;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--navy);
+}
+
+.sev-8, .sev-9, .sev-10 { background: var(--crimson); color: white; border-color: var(--crimson); }
+.sev-6, .sev-7           { background: var(--orange); color: white; border-color: var(--orange); }
+.sev-4, .sev-5           { background: var(--amber); color: white; border-color: var(--amber); }
+
+/* ─── THREAT CARDS ─── */
+.threat-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  page-break-inside: avoid;
+}
+
+.threat-card-header {
+  background: var(--navy);
+  padding: 14px 16px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.owasp-tag {
+  display: inline-block;
+  background: var(--crimson);
+  color: white;
+  font-size: 7.5pt;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.threat-card-desc {
+  font-size: 9.5pt;
+  color: rgba(255,255,255,0.9);
+  line-height: 1.5;
+}
+
+.threat-card-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: white;
+}
+
+.threat-field {}
+
+.field-label {
+  display: block;
+  font-size: 7.5pt;
+  font-weight: 700;
+  color: var(--slate);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.field-value { color: var(--navy-mid); font-size: 8.5pt; }
+
+.field-action {
+  background: #f0fdf4;
+  border-left: 3px solid #22c55e;
+  padding: 8px 12px;
+  border-radius: 0 6px 6px 0;
+}
+
+.asset-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.asset-tag {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-family: var(--mono);
+  font-size: 8pt;
+  color: var(--navy-mid);
+}
+
+/* ─── CODE BLOCKS ─── */
+.code-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--navy);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  page-break-inside: avoid;
+}
+
+.code-index {
+  font-size: 7.5pt;
+  font-weight: 700;
+  color: var(--crimson-mid);
+  min-width: 20px;
+  margin-top: 1px;
+}
+
+.code-block code {
+  font-family: var(--mono);
+  font-size: 8.5pt;
+  color: #a5f3fc;
+  white-space: pre-wrap;
+  word-break: break-all;
+  flex: 1;
+}
+
+/* ─── STATS GRID ─── */
+.stats-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stats-block {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.stats-block-full {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.stats-block-title {
+  font-size: 8pt;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* İstatistik tablosu satırları daha sıkışık */
+.stats-grid .data-table {
+  font-size: 7.5pt;
+}
+
+.stats-grid .data-table td,
+.stats-grid .data-table th {
+  padding: 4px 8px;
+  font-size: 7.5pt;
+}
+
+.stats-grid .action-row {
+  margin-bottom: 6px;
+}
+
+.stats-grid .bar-fill {
+  height: 5px;
+}
+
+.stats-grid .bar-wrap {
+  min-width: 55px;
+}
+
+/* Anomali tablosu tam genişlik — daha okunabilir */
+.stats-block-full .data-table td,
+.stats-block-full .data-table th {
+  padding: 5px 10px;
+  font-size: 8pt;
+}
+
+/* ─── PAGE FOOTER ─── */
+.page::after {
+  content: "Cassandra CloudSec Agent  ·  Muhammed Emin Berberoğlu";
+  position: absolute;
+  bottom: 8mm;
+  left: 18mm;
+  right: 18mm;
+  font-size: 7pt;
+  color: var(--slate-light);
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  padding-top: 5px;
+}
+
+/* ─── PRINT TWEAKS ─── */
+@media print {
+  .cover-page, .page { page-break-after: always; }
+  .threat-card, .code-block, tr { page-break-inside: avoid; }
+}
