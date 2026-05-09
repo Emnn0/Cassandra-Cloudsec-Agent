@@ -207,6 +207,22 @@ Bu proje **tek başına bir öğrenme projesi olarak** geliştirildi. Modern bir
 - SQLAlchemy 2.0 async syntax + Alembic migration
 - Caddy ile otomatik TLS sertifikası
 - WeasyPrint ile profesyonel PDF rapor üretimi
+- 
+### Test ve kod kalitesi
+
+- **81 unit test** — pytest ile parser, heuristics ve LLM reasoning katmanları için kapsamlı test coverage
+- **Async test desteği** — pytest-asyncio ile asenkron kod testleri
+- **Integration test ayrımı** — gerçek API çağrıları `@pytest.mark.integration` ile ayrılmış
+- **Mock ve fixture pattern** — LLM çağrıları unit test sırasında mock'lanır, gerçek tokenler harcanmaz
+- **Test coverage**: parsers, heuristics, reasoning, redaction, threat report schema
+
+```bash
+# Tüm testleri çalıştır
+pytest tests/ -v
+
+# Coverage raporu
+pytest tests/ --cov=app --cov-report=html
+```
 
 ### Mimari kararlar
 
