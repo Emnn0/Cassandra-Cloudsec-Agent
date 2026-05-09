@@ -1,5 +1,21 @@
 # Cassandra CloudSec Agent
 
+<p align="center">
+     <strong>AI-powered firewall log analysis platform</strong><br/>
+     Upload your WAF logs. Get actionable threat intelligence in 60 seconds.
+   </p>
+
+   <p align="center">
+     <img src="https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white" alt="Python"/>
+     <img src="https://img.shields.io/badge/FastAPI-0.110-009688?logo=fastapi&logoColor=white" alt="FastAPI"/>
+     <img src="https://img.shields.io/badge/Next.js-14-black?logo=nextdotjs&logoColor=white" alt="Next.js"/>
+     <img src="https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white" alt="PostgreSQL"/>
+     <img src="https://img.shields.io/badge/Claude-Sonnet%204.5-D4A27F?logo=anthropic&logoColor=white" alt="Claude"/>
+     <img src="https://img.shields.io/badge/License-MIT-green" alt="License"/>
+   </p>
+
+   ---
+
 Yapay zeka destekli güvenlik log analiz platformu. WAF ve sunucu loglarını yükle, otomatik tehdit analizi al, PDF raporu indir.
 
 ## Özellikler
