@@ -18,6 +18,18 @@
 
 Yapay zeka destekli güvenlik log analiz platformu. WAF ve sunucu loglarını yükle, otomatik tehdit analizi al, PDF raporu indir.
 
+## Ekran Görüntüleri
+
+### Ana Sayfa
+![Cassandra Landing Page](docs/screenshots/01-landing-page.png)
+
+### Tehdit Analiz Paneli
+![Analiz Detay Sayfası](docs/screenshots/02-analysis-detail.png)
+
+### PDF Tehdit Raporu
+![PDF Threat Analysis Report](docs/screenshots/03-pdf-report.png)
+
+---
 ## Özellikler
 
 - **Çoklu log formatı desteği** — Cloudflare WAF, Cloudflare HTTP, LiteSpeed, Apache, Nginx ve genel metin logları
