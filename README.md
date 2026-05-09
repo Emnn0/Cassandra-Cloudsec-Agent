@@ -220,3 +220,9 @@ Bu proje **tek başına bir öğrenme projesi olarak** geliştirildi. Modern bir
 ## Lisans
 
 MIT License — Muhammed Emin Berberoğlu
+---
+
+<p align="center">
+  <strong>Muhammed Emin Berberoğlu</strong> tarafından geliştirildi<br/>
+  <a href="https://github.com/Emnn0">GitHub</a> · <a href="https://www.linkedin.com/in/muhammed-emin-berbero%C4%9Flu-88210b388">LinkedIn</a>
+</p>
