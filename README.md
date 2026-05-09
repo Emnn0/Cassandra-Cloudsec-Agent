@@ -1,7 +1,35 @@
 # Cassandra CloudSec Agent
 
+<p align="center">
+     <strong>AI-powered firewall log analysis platform</strong><br/>
+     Upload your WAF logs. Get actionable threat intelligence in 60 seconds.
+   </p>
+
+   <p align="center">
+     <img src="https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white" alt="Python"/>
+     <img src="https://img.shields.io/badge/FastAPI-0.110-009688?logo=fastapi&logoColor=white" alt="FastAPI"/>
+     <img src="https://img.shields.io/badge/Next.js-14-black?logo=nextdotjs&logoColor=white" alt="Next.js"/>
+     <img src="https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white" alt="PostgreSQL"/>
+     <img src="https://img.shields.io/badge/Claude-Sonnet%204.5-D4A27F?logo=anthropic&logoColor=white" alt="Claude"/>
+     <img src="https://img.shields.io/badge/License-MIT-green" alt="License"/>
+   </p>
+
+   ---
+
 Yapay zeka destekli güvenlik log analiz platformu. WAF ve sunucu loglarını yükle, otomatik tehdit analizi al, PDF raporu indir.
 
+## Ekran Görüntüleri
+
+### Ana Sayfa
+![Cassandra Landing Page](docs/screenshots/01-landing-page.png)
+
+### Tehdit Analiz Paneli
+![Analiz Detay Sayfası](docs/screenshots/02-analysis-detail.png)
+
+### PDF Tehdit Raporu
+![PDF Threat Analysis Report](docs/screenshots/03-pdf-report.png)
+
+---
 ## Özellikler
 
 - **Çoklu log formatı desteği** — Cloudflare WAF, Cloudflare HTTP, LiteSpeed, Apache, Nginx ve genel metin logları
@@ -163,7 +191,38 @@ cassandra-cloudsec-agent/
 5. Pull request aç
 
 ---
+## Bu Proje Hakkında
 
+Bu proje **tek başına bir öğrenme projesi olarak** geliştirildi. Modern bir SaaS uygulamasının uçtan uca nasıl kurulduğunu, hangi parçalardan oluştuğunu ve nasıl deploy edildiğini öğrenmek için yapıldı.
+
+### Bu projede öğrenilenler
+
+- Üç katmanlı async mimari (FastAPI + Celery + Next.js)
+- LLM provider abstraction ve `tool_use` ile structured output
+- PII redaction ve KVKK/GDPR uyumlu veri işleme
+- Streaming parser pattern (büyük dosyaları belleğe yüklemeden işleme)
+- Docker Compose ile multi-service orchestration (healthcheck, migration, networks)
+- SQLAlchemy 2.0 async syntax + Alembic migration
+- Caddy ile otomatik TLS sertifikası
+- WeasyPrint ile profesyonel PDF rapor üretimi
+
+### Mimari kararlar
+
+| Karar | Sebep |
+|-------|-------|
+| Celery + Redis | LLM çağrıları 30-90 saniye sürebilir, HTTP request bunu bekleyemez |
+| LLM Provider Abstraction | Vendor lock-in'den kaçınmak; Claude/GPT/Gemini arası geçiş |
+| PII Redaction | Müşteri loglarındaki IP/email LLM'e gitmeden önce maskelenmeli |
+| Async SQLAlchemy 2.0 | I/O-bound DB operasyonlarında thread'ler bloklanmasın |
+| Caddy yerine Nginx değil | Otomatik Let's Encrypt, çok daha az config |
+
+---
 ## Lisans
 
 MIT License — Muhammed Emin Berberoğlu
+---
+
+<p align="center">
+  <strong>Muhammed Emin Berberoğlu</strong> tarafından geliştirildi<br/>
+  <a href="https://github.com/Emnn0">GitHub</a> · <a href="https://www.linkedin.com/in/muhammed-emin-berbero%C4%9Flu-88210b388">LinkedIn</a>
+</p>
