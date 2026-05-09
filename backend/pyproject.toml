@@ -63,3 +63,6 @@ testpaths = ["tests"]
 markers = [
     "integration: marks tests that call real external APIs (deselect with '-m not integration')",
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
