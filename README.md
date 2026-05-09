@@ -191,7 +191,32 @@ cassandra-cloudsec-agent/
 5. Pull request aç
 
 ---
+## Bu Proje Hakkında
 
+Bu proje **tek başına bir öğrenme projesi olarak** geliştirildi. Modern bir SaaS uygulamasının uçtan uca nasıl kurulduğunu, hangi parçalardan oluştuğunu ve nasıl deploy edildiğini öğrenmek için yapıldı.
+
+### Bu projede öğrenilenler
+
+- Üç katmanlı async mimari (FastAPI + Celery + Next.js)
+- LLM provider abstraction ve `tool_use` ile structured output
+- PII redaction ve KVKK/GDPR uyumlu veri işleme
+- Streaming parser pattern (büyük dosyaları belleğe yüklemeden işleme)
+- Docker Compose ile multi-service orchestration (healthcheck, migration, networks)
+- SQLAlchemy 2.0 async syntax + Alembic migration
+- Caddy ile otomatik TLS sertifikası
+- WeasyPrint ile profesyonel PDF rapor üretimi
+
+### Mimari kararlar
+
+| Karar | Sebep |
+|-------|-------|
+| Celery + Redis | LLM çağrıları 30-90 saniye sürebilir, HTTP request bunu bekleyemez |
+| LLM Provider Abstraction | Vendor lock-in'den kaçınmak; Claude/GPT/Gemini arası geçiş |
+| PII Redaction | Müşteri loglarındaki IP/email LLM'e gitmeden önce maskelenmeli |
+| Async SQLAlchemy 2.0 | I/O-bound DB operasyonlarında thread'ler bloklanmasın |
+| Caddy yerine Nginx değil | Otomatik Let's Encrypt, çok daha az config |
+
+---
 ## Lisans
 
 MIT License — Muhammed Emin Berberoğlu
